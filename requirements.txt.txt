@@ -1,0 +1,9 @@
+streamlit
+streamlit_option_menu
+math
+numpy
+pandas
+plotly_express
+base64
+plotly.graph_objects
+webbrowser
