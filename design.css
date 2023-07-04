@@ -1,5 +1,5 @@
-div.css-1v0mbdj.etr89bj1 /*Photo Profile*/
-{
+/*div.css-1v0mbdj.etr89bj1 /*Photo Profile*/
+/*{
     text-align: center;
     border-radius: 50%;
     padding: 1px;
@@ -8,9 +8,12 @@ div.css-1v0mbdj.etr89bj1 /*Photo Profile*/
     margin-left: auto;
     width: 40%;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}*/
+
+span.css-10trblm.e16nr0p30
+{
+    font-family:'Times New Roman', Times, serif;
 }
-
-
 
 div.css-5rimss.e16nr0p34 /*Hasil Simulasi*/
 {
@@ -21,3 +24,10 @@ div.css-16idsys.e16nr0p34
 {
     font-size: large;
 }
+/*span.css-10trblm.e16nr0p30
+{
+    background-color: white;
+    border-radius: 25px;
+    padding: 20px;
+}*/
+   
