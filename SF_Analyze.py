@@ -267,7 +267,7 @@ if selected == "Keandalan & Optimasi Perisaian":
 
                     F3 = mencari_persen(D3) #kemampuan proteksi ideal
                     F5 = mencari_persen(D5) #kemampuan proteksi trhdp petir
-                    #F5 = mencari_persen(D5) #kemampuan proteksi trhdp petir
+                   
                     
                     st.markdown("<h3 style='text-align: center; text-color:#31333f;'>OPTIMASI PERISAIAN</h3>", unsafe_allow_html=True)
                     colA, colB = st.columns(2)
@@ -298,7 +298,7 @@ if selected == "Keandalan & Optimasi Perisaian":
                         st.plotly_chart(gambar, use_container_width=True)
 
                         st.markdown("**UJI COBA BERDASARKAN PETIR**")
-                        st.write("Arus Petir\t\t\t =", RataRataGangguan, "kA dengan Radius", RGangguan, "meter")
+                        st.write("Arus Petir\t\t\t =", RataRataGangguan, "kA (Radius", RGangguan, "m)")
                         st.write("Sudut Perisai\t\t\t =",B5, "derajat")
                         st.write("- Radius Rolling Sphere\t =", C5, "meter")
                         st.write("Arus Kritis\t =",ArusKritisUji, "kA", )
