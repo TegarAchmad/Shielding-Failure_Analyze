@@ -11,6 +11,7 @@ from streamlit_extras.mention import mention
 with open("design.css") as source_des:
     st.markdown(f"<style>{source_des.read()}</style>", unsafe_allow_html=True)
 
+
 @st.cache_data
 def get_img_as_base64(file):
     with open(file, "rb") as f:
@@ -62,8 +63,8 @@ with st.sidebar:
     st.image("logofix.png")
 
     selected = option_menu(
-        menu_title="SHIELDING ANALYZE WEB",
-        options=["Shield Reliability & Optimization", "Strike Simulation", "Contact"],
+        menu_title="SITUS WEB ANALISA PERISAI",
+        options=["Keandalan & Optimasi Perisaian", "Simulasi Sambaran", "Kontak"],
         icons=["shield-shaded", "lightning-charge-fill", "envelope"],
         menu_icon="cast",
         styles=
@@ -75,7 +76,7 @@ with st.sidebar:
         }
     )
 
-if selected == "Shield Reliability & Optimization":
+if selected == "Keandalan & Optimasi Perisaian":
     page_bg_img = f"""
     <style>
     [data-testid="stMarkdownContainer"]{{
@@ -86,7 +87,7 @@ if selected == "Shield Reliability & Optimization":
     st.markdown(page_bg_img, unsafe_allow_html=True)
     #inputan
     with st.form("Data Tower"):
-        st.markdown("<h1 style='text-align: center; text-color:#31333f;font-family: 'Times New Roman', Times, serif;background-color: white;border-radius: 25px;padding: 20px;'>Shield Reliability & Optimization</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; text-color:#31333f;font-family: 'Times New Roman', Times, serif;background-color: white;border-radius: 25px;padding: 20px;'>KEANDALAN & OPTIMASI PERISAIAN</h1>", unsafe_allow_html=True)
         st.markdown("---")
         st.subheader("Data Tower")
         JenisTower = st.selectbox("Tentukan Jenis Tower Transmisi!", options=("SUTT", "SUTET", "SUTUT"))
@@ -126,25 +127,21 @@ if selected == "Shield Reliability & Optimization":
                 st.session_state[key] = not st.session_state[key]
             return st.session_state[key]
 
-        if form_submit_button('Reliabilty Test', key="sentiment_button"):
-            B2 = round(m.degrees(m.atan((fasa-pgsw)/fg)), 2) #hitung sudut eksisting
-            C2 = round(htower/(1-m.sin(m.radians(B2))), 2) #radius rolling sphere
-            D2 = round(pow((C2/6.7), (1/0.8)), 2) #kemampuan min petir
-            F2 = mencari_persen(D2) #kemampuan proteksi petir
+        if form_submit_button('Uji Keandalan', key="sentiment_button"):
             #Impedansi
             Ztower = round(30*m.log((2*(htower**2 + rtower**2))/(rtower**2)), 2)
             LebarTraversGSW = pgsw*2
             rKawatFasa = (DiameterKawatFasa/2)/1000
-            Zc = 60*m.log(2*hfasa/rKawatFasa)
-            Zk = m.sqrt((Ztower*Zc))
-            ArusKritis = round((2.2*(BIL/Zk)), 3)
-            RSAK = 6.7*(ArusKritis**0.8)
-            F22 = 100 - F2
-
-            #Elektrogeometri
-            def ELEKTROGEOMETRI(alfa, Isf):
+            Zc = 60*(m.log((2*hfasa/rKawatFasa)))
+        
+            AD2 = round(pow((hfasa/6.7), (1/0.8)), 2)
+            B2 = round(m.degrees(m.atan((fasa-pgsw)/fg)),2) #hitung sudut eksisting
+            
+            #ELEKTROGEOMETRI
+            def ELEKTROGEOMETRI(alfa, Isf, pgswexpand):
+                global Smaks
                 teta = 0
-                traversfasagsw = fasa - pgsw
+                traversfasagsw = fasa - pgswexpand
                 F = m.sqrt(fg**2 + traversfasagsw**2 )
                 S = hfasa 
                 w = m.degrees(m.acos((F/(2*S))))
@@ -170,7 +167,7 @@ if selected == "Shield Reliability & Optimization":
                     XsMin = Smin*((m.cos(teta2)+m.sin(m.radians(alfa-Wmin))))
 
                 #Jarak Sambaran Maksimum
-                mm = (fasa-pgsw)/(htower-hfasa)
+                mm = (fasa-pgswexpand)/(htower-hfasa)
                 Y0 = (htower+hfasa)/2
                 As = mm**2-mm**2*Betta-Betta**2
                 Bs = Betta*(mm**2+1)
@@ -187,67 +184,90 @@ if selected == "Shield Reliability & Optimization":
                 VSF = Zc*(Isf/2)
 
                 if VSF > BIL:
-                    huhuhu = ("SHIELDING FAILURE!!!")
+                    huhuhu = ("FLASHOVER!!!")
                 else:
-                    huhuhu = ("Tidak Terjadi SHIELDING FAILURE")
+                    huhuhu = ("TIDAK TERJADI FLAHSOVER")
                 #HASIL
                 global dataE
                 dataE = {"Sudut": [alfa],
                         "VFlashover":[VlompatApi],
                         "Xs (m)" : [Xs],
-                        "Smin (m)": [Smin],
+                        #"Smin (m)": [Smin],
                         "Smaks (m)": [Smaks],
                         "Imin Flashover (kA)":[Imin],
-                        "Imaks Flashover (kA)": [Imaks],
-                        "Pmin": [Pmin],
-                        "Pmax":[Pmax],
+                        "Imaks SF (kA)": [Imaks],
+                        #"Pmin": [Pmin],
+                        #"Pmax":[Pmax],
                         "Gangguan Petir (km-tahun)":[NSF],
                         "VSF (kV)":[VSF],
                         "status" : [huhuhu]
                         }
-                return alfa, Isf
-
+                return alfa, Isf, pgswexpand
+            if ELEKTROGEOMETRI(B2,AD2, pgsw):
+                C2 = round(Smaks, 2) #radius rolling sphere
+            D2 = round(pow((C2/6.7), (1/0.8)), 2) #kemampuan min petir
+            F2 = mencari_persen(D2) #kemampuan proteksi petir
+            F22 = 100 - F2
+            
+            ArusKritis = round((pow(((C2 + 3)/6.7), (1/0.8))), 3)
+            RSAK = round(6.7*(ArusKritis**0.8), 3)
 
             st.markdown("<h3 style='text-align: center; text-color:#31333f;'>UJI KEANDALAN PERISAIAN</h3>", unsafe_allow_html=True)
+            
             col1, col2 = st.columns(2)
             with col1:
-                st.write("Sudut Lindung: ",B2, "derajat")
-                st.write("Arus Kegagalan Perisaian: ",D2, "kA")
+                st.write("Sudut Perisaian: ",B2, "derajat")
+                st.write("Arus maks Kegagalan Perisaian: ",D2, "kA")
                 st.write("- Radius Rolling Sphere: ",C2, "meter")
                 st.write("Arus Kritis: ", ArusKritis, " kA")
-                st.write("- Radius Rolling Sphere: ",RSAK, "meter")
-                st.write("Kemampuan Proteksi: ",F2, "%")
+                st.write("- Radius Rolling Sphere: ", RSAK, "meter")
+                #st.write("Kemampuan Proteksi: ",F2, "%")
+                st.image("zrsout22.png")
             with col2:
                 fig = px.pie(values=[F22, F2], names=['tak terproteksi', 'terproteksi'],
                             title=f'Kemampuan Perisaian',
                             height=200, width=100)
                 fig.update_layout(margin=dict(l=20, r=20, t=30, b=0),)
                 st.plotly_chart(fig, use_container_width=True)
-
+                st.image("RS22.png")
             if B2 > 18:
                 st.error("PERISAIAN TIDAK ANDAL")
       
             if B2 > 18:
-                if st.form_submit_button("Shield Optimazation"):
+                if st.form_submit_button("Optimasi Perisaian"):
                     #optimasi sudut perisaian
                     B3 = 15 #sudut lindung idel dari SPLN
-                    C3 = round(htower/(1-m.sin(m.radians(B3))), 2) #radius rolling
-                    D3 = round(pow((C3/6.7), (1/0.8)), 2) #kemampuan min arus petir
                     E3 = round(fasa-pgsw-(fg*m.tan(m.radians(B3))), 2) #penambahan panjang
+                    pgswSPLN = pgsw + E3
+                    if ELEKTROGEOMETRI(B3,AD2, pgswSPLN):
+                    #C3 = round(htower/(1-m.sin(m.radians(B3))), 2) #radius rolling
+                        C3 = round(Smaks, 2) #radius rolling
+                    D3 = round(pow((C3/6.7), (1/0.8)), 2) #kemampuan min arus petir
+                    RSAKPLN = round((C3+3), 3)
+                    ArusKritisPLN = round((pow(((C3 + 3)/6.7), (1/0.8))), 3)
 
-                    D5 = float(meanpetir) #arus petir
-                    C5 = round((6.7*(pow(D5, 0.8))), 2)
-                    SudutLindungUji = round(m.degrees(m.asin(1-(htower/C5))), 2) #hitung sudut lindung terhadap petir
+                    RataRataGangguan = float(meanpetir) #arus petir
+                    RGangguan = round((6.7*(pow(RataRataGangguan, 0.8))), 2)
+                    SudutLindungUji = round(m.degrees(m.asin(1-(htower/RGangguan))), 2) #hitung sudut lindung terhadap petir
+                    print(SudutLindungUji, "SUUDTT")
                     if SudutLindungUji < 0:
                         B5 = 0
-                        RB5 = round(htower/(1-m.sin(m.radians(B5))), 2) #radius rolling
-                        
                     else:
                         B5 = SudutLindungUji
+                    
                     E5 = round(fasa-pgsw-(fg*m.tan(m.radians(B5))), 2) #penambahan panjang GSW
+                    pgswUJI = pgsw + E5
+                    if ELEKTROGEOMETRI(B5,AD2, pgswUJI):    
+                        RB5 = Smaks #radius rolling    
+                    D5 = round(pow((RB5/6.7), (1/0.8)), 2) #kemampuan min arus petir
+                    #C5 = RGangguan
+                    C5 = round((6.7*(pow(D5, 0.8))), 2)
+                    RSAKUji = round((C5+3), 3)
+                    ArusKritisUji = round((pow(((RSAKUji)/6.7), (1/0.8))), 3)
 
                     F3 = mencari_persen(D3) #kemampuan proteksi ideal
                     F5 = mencari_persen(D5) #kemampuan proteksi trhdp petir
+                    #F5 = mencari_persen(D5) #kemampuan proteksi trhdp petir
                     
                     st.markdown("<h3 style='text-align: center; text-color:#31333f;'>OPTIMASI PERISAIAN</h3>", unsafe_allow_html=True)
                     colA, colB = st.columns(2)
@@ -260,11 +280,14 @@ if selected == "Shield Reliability & Optimization":
                         st.plotly_chart(fig, use_container_width=True)
 
                         st.markdown("**STANDAR IDEAL PT. PLN**")
-                        st.write("- Sudut Lindung\t =",B3, "derajat")
-                        st.write("- Radius Rolling Spehere\t =", C3, "meter")
-                        st.write("- Arus Petir Minimum\t =",D3, "kA")
-                        st.write("- Pertambahan Panjang\t\t =",E3, "meter")
-                        st.write("- Kemampuan Proteksi\t :",F3, "%")
+                        st.write("Sudut Perisai\t =",B3, "derajat")
+                        st.write("Arus Maks Kegagalan Perisai\t =",D3, "kA")
+                        st.write("- Radius RS ImaksSF\t =", C3, "meter")
+                        st.write("Arus Kritis\t =",ArusKritisPLN, "kA", )
+                        st.write("- Radius RS Ic\t =", RSAKPLN, "meter")
+                        st.write("Pertambahan Panjang\t\t =",E3, "meter")
+                        #st.write("Kemampuan Proteksi\t :",F3, "%")
+                        st.image("RS15.png")
                 
                     with colB:
                         f36 = 100-F5
@@ -275,25 +298,29 @@ if selected == "Shield Reliability & Optimization":
                         st.plotly_chart(gambar, use_container_width=True)
 
                         st.markdown("**UJI COBA BERDASARKAN PETIR**")
-                        st.write("- Arus Petir\t\t\t =", D5, "kA")
-                        st.write("- Sudut lindung\t\t\t =",B5, "derajat")
-                        st.write("- Radius Rolling Spehere\t =", C5, " meter")
-                        st.write("- Pertambahan Panjang GSW\t =", E5, " meter")
-                        st.write("- Kemampuan Proteksi\t =",F5, "%")
+                        st.write("Arus Petir\t\t\t =", RataRataGangguan, "kA dengan Radius", RGangguan, "meter")
+                        st.write("Sudut Perisai\t\t\t =",B5, "derajat")
+                        st.write("- Radius Rolling Sphere\t =", C5, "meter")
+                        st.write("Arus Kritis\t =",ArusKritisUji, "kA", )
+                        st.write("- Radius RS Ic\t =", RSAKUji, "meter")
+                        st.write("Pertambahan Panjang GSW\t =", E5, " m")
+                        #st.write("Kemampuan Proteksi\t =",F5, "%")
+                        st.image("RS0.png")
                     st.markdown("---")    
-                    st.markdown("<h3 style='text-color:#31333f;'>Teori Elektrogeometri</h3>", unsafe_allow_html=True)
+                    st.markdown("<h3 style='text-color:#31333f;'>Rincian</h3>", unsafe_allow_html=True)
                     def warnain(x):
                         if x > BIL:
                             color = 'red'
                         else:
                             color = 'blue'
                         return f'background: {color}'
-                    AD2 = round(pow((hfasa/6.7), (1/0.8)), 2)
-                    if ELEKTROGEOMETRI(B2,AD2):
+                    
+                    
+                    if ELEKTROGEOMETRI(B2,D2, pgsw):
                         df1 = pd.DataFrame(dataE, index = ["Existing"])
-                    if ELEKTROGEOMETRI(B3,AD2):
+                    if ELEKTROGEOMETRI(B3,D3, pgswSPLN):
                         df2 = pd.DataFrame(dataE, index =["SPLN"])
-                    if ELEKTROGEOMETRI(B5,AD2):
+                    if ELEKTROGEOMETRI(B5,D5, pgswUJI):
                         df3 = pd.DataFrame(dataE, index =["Uji Coba"])
                     dataEL = pd.concat([df1,df2,df3])
                     dataEL.style.applymap(warnain,subset=['VSF (kV)'])
@@ -306,12 +333,12 @@ if selected == "Shield Reliability & Optimization":
                 st.table(df1) 
                 st.success("PERISAIAN ANDAL")
 
-if selected == "Strike Simulation":
+if selected == "Simulasi Sambaran":
     with st.form("Towerdata"):
-        st.markdown("<h1 style='text-align: center;'>STRIKE SIMULATION</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>SIMULASI SAMBARAN</h1>", unsafe_allow_html=True)
         st.markdown("---")
         SimulasiSambaran = st.selectbox("Tentukan Simulasi!", options=("Sambaran Langsung Pada Menara", "Sambaran langsung Pada Kawat Tanah"))
-        st.subheader("Tower Data")
+        st.subheader("Data Tower")
         col1,col2=st.columns(2)
         Vs = col1.number_input("Tegangan Sistem (kV)")#tegangan sistem sutt
         ht = col2.number_input("Tinggi Tower (m)") #tinggi gsw
@@ -323,200 +350,312 @@ if selected == "Strike Simulation":
         col14,col15=st.columns(2)
         DiameterKawatTanah = col14.number_input("Diameter GSW (mm)")
         rKawatTanah = (DiameterKawatTanah/2)/1000 # gsw 55mm2
-        BIL = col15.number_input("BIL Isolator")
-        st.markdown("---")
-        st.subheader("Lightning Data")
+        BIL = col15.number_input("BIL Isolator (kV)")
+        #st.markdown("---")
+        st.subheader("Data Petir")
         col11,col12=st.columns(2)
         Ipuncak = col11.number_input("Arus Puncak Petir (kA)") #asumsi arus puncak petir 40 kA
         IcuramPetir = col12.number_input("Arus Curam Petir (kA/µs)")
         SimulasiBerjalan=st.form_submit_button("Submit!")
 
-    if SimulasiBerjalan:
-        #Impedansi
-        Ztower = round(30*m.log((2*(ht**2 + rtower**2))/(rtower**2)), 2)
-        print(Ztower)
-        Zg = 60*m.log((2*ht)/m.sqrt(LebarTraversGSW*rKawatTanah))
-        print(Zg)
+        if SimulasiBerjalan:
+            #Impedansi
+            Ztower = round(30*m.log((2*(ht**2 + rtower**2))/(rtower**2)), 2)
+            print(Ztower)
+            Zg = 60*m.log((2*ht)/m.sqrt(LebarTraversGSW*rKawatTanah))
+            print(Zg)
 
-        if SimulasiSambaran == "Sambaran Langsung Pada Menara":
-            ZgAksen = 2*Zg*Ztower/(Zg+(2*Ztower))
-            RoAksen = Ro*Ztower/(Ztower-Ro)
-            print(ZgAksen)
-            print(RoAksen)
+            if SimulasiSambaran == "Sambaran Langsung Pada Menara":
+                ZgAksen = 2*Zg*Ztower/(Zg+(2*Ztower))
+                RoAksen = Ro*Ztower/(Ztower-Ro)
 
-            #impedansi gelombang menara
-            Zw = ((2*Zg**2*Ztower)/((Zg+2*Ztower)**2))*((Ztower-Ro)/(Ztower+Ro))
-            print(Zw)
+                #impedansi gelombang menara
+                Zw = ((2*Zg**2*Ztower)/((Zg+2*Ztower)**2))*((Ztower-Ro)/(Ztower+Ro))
 
-            #faktor damping menara
-            psi = ((2*Ztower-Zg)/(2*Ztower+Zg))*((Ztower-Ro)/(Ztower+Ro))
-            print(psi)
+                #faktor damping menara
+                psi = ((2*Ztower-Zg)/(2*Ztower+Zg))*((Ztower-Ro)/(Ztower+Ro))
 
-            #Waktu tempuh gelombang petir di menara
-            tPetir = ht/300 #kecepatan cahaya 300m/mikrodet
-            print(tPetir)
+                #Waktu tempuh gelombang petir di menara
+                tPetir = ht/300 #kecepatan cahaya 300m/mikrodet
 
-            #nilai induktansi menara
-            Ltower = round(((ZgAksen+2*RoAksen)/ZgAksen)*((2*Zw*tPetir)/(1-psi)), 2)
-            print(Ltower, "mikroHenry")
+                #nilai induktansi menara
+                Ltower = round(((ZgAksen+2*RoAksen)/ZgAksen)*((2*Zw*tPetir)/(1-psi)), 2)
 
-            # tegangan yang akan timbul pada puncak menara
-            VPuncakTower = Ipuncak*Ztower
-            print(VPuncakTower, "kV")
+                # tegangan yang akan timbul pada puncak menara
+                VPuncakTower = Ipuncak*Ztower
 
-            #besarnya tegangan pada titik percabangan
-            Zek = 1/((1/Zg)+(1/Zg)+(1/Zg)+(1/Zg)+(1/Ztower)) #perhitungan tahanan paralel
-            Uk = VPuncakTower*(1+((Zek-Ztower)/(Zek+Ztower)))
-            print(Uk, "kV")
-
-            #Nilai arus yang mengalir pada menara
-            Itower = round(Uk/Ztower, 2)
-            print(Itower, "kA")
-
-            #tegangan yang akan timbul pada menara 
-            Vtf = (Itower*Ro)+(Ltower*IcuramPetir)+(Vs*m.sqrt(2)/m.sqrt(3))
-            print(Vtf, "kV")
-            st.markdown("---")
-            st.subheader("SIMULASI SAMBARAN LANGSUNG PADA MENARA")
-            st.write("- Impedansi Surja Menara (Ω): ", Ztower)
-            st.write("- Impedansi Kawat tanah (Ω): ", Zg)
-            st.write("- Impedansi Kawat Fasa (Ω): ", Zc)
-            st.write("- Impedansi Gelombang menara (Ω):", Zw)
-            st.write("- Faktor Damping Menara: ", psi)
-            st.write("- Waktu tempuh gelombang petir menara (µdet): ", tPetir)
-            st.write("- Nilai Induktansi Menara (µH): ", Ltower)
-            st.write("- tegangan yang akan timbul pada puncak menara(kV): ", VPuncakTower)
-            st.write("- besarnya tegangan pada titik percabangan (kV): ", Uk)
-            st.write("- Niilai arus yang mengalir pada menara(kA): ", Itower)
-            st.write("- Tegangan Yang Timbul pada menara(kV): ", Vtf)
-            if Vtf > BIL:
-                st.error(f"BACKFLASOVER!!!"+ "-->"+"VTF: "+str(Vtf)+ " > BIL: "+ str(BIL))
-            else:
-                st.success(F"Tidak Terjadi BACKFLASHOVER")
-            #GRAFIK SIMULASI
-            def BasicInsulationLevel(BOL):
-                x = np.arange(0,100,1)
-                y = BOL-x*0
-                return x,y
-            # 1. Membuat data
-            def BackFlashover():
-                xp = np.arange(0,100,1)
-                VPuncakTower = xp*Ztower
+                #besarnya tegangan pada titik percabangan
+                Zek = 1/((1/Zg)+(1/Zg)+(1/Zg)+(1/Zg)+(1/Ztower)) #perhitungan tahanan paralel
                 Uk = VPuncakTower*(1+((Zek-Ztower)/(Zek+Ztower)))
-                Itower = Uk/Ztower
-                yp = (Itower*Ro)+(Ltower*IcuramPetir)+(Vs*m.sqrt(2)/m.sqrt(3))
-                return xp,yp
+
+                #Nilai arus yang mengalir pada menara
+                Itower = round(Uk/Ztower, 2)
+
+                #tegangan yang akan timbul pada menara 
+                Vtf = (Itower*Ro)+(Ltower*IcuramPetir)+(Vs*m.sqrt(2)/m.sqrt(3))
+
+                st.markdown("---")
+                st.subheader("SIMULASI SAMBARAN LANGSUNG PADA MENARA")
+                st.write("- Impedansi Surja Menara (Ω): ", Ztower)
+                st.write("- Impedansi Kawat tanah (Ω): ", Zg)
+                st.write("- Impedansi Gelombang menara (Ω):", Zw)
+                st.write("- Faktor Damping Menara: ", psi)
+                st.write("- Waktu tempuh gelombang petir menara (µdet): ", tPetir)
+                st.write("- Nilai Induktansi Menara (µH): ", Ltower)
+                st.write("- tegangan yang akan timbul pada puncak menara(kV): ", VPuncakTower)
+                st.write("- besarnya tegangan pada titik percabangan (kV): ", Uk)
+                st.write("- Niilai arus yang mengalir pada menara(kA): ", Itower)
+                st.write("- Tegangan Yang Timbul pada menara(kV): ", Vtf)
+                if Vtf > BIL:
+                    st.error(f"BACKFLASOVER!!!"+ "-->"+"VTF: "+str(Vtf)+ " > BIL: "+ str(BIL))
+                else:
+                    st.success(F"Tidak Terjadi BACKFLASHOVER")
+                #GRAFIK SIMULASI
+                def BasicInsulationLevel(BOL):
+                    x = np.arange(0,100,0.1)
+                    y = BOL-x*0
+                    return x,y
+                # 1. Membuat data
+                def BackFlashover():
+                    xp = np.arange(0,100,1)
+                    VPuncakTower = xp*Ztower
+                    Uk = VPuncakTower*(1+((Zek-Ztower)/(Zek+Ztower)))
+                    Itower = Uk/Ztower
+                    yp = (Itower*Ro)+(Ltower*IcuramPetir)+(Vs*m.sqrt(2)/m.sqrt(3))
+                    return xp,yp
+
+                def InduktansiMenara():
+                    Induktansi = np.arange(0,100,1)
+                    VtfInduk = (Itower*Ro)+(Induktansi*IcuramPetir)+(Vs*m.sqrt(2)/m.sqrt(3))
+                    return Induktansi, VtfInduk
                 
-            # 2. Membuat plot
-            x1,y1 = BasicInsulationLevel(BIL)
-            xp1,yp2 = BackFlashover()
+                def TahananKaki(IpuncakM):
+                    RoT = np.arange(0, 25, 5)
+                    ZgAksen = 2*Zg*Ztower/(Zg+(2*Ztower))
+                    RoAksen = RoT*Ztower/(Ztower-RoT)
+                    Zw = ((2*Zg**2*Ztower)/((Zg+2*Ztower)**2))*((Ztower-RoT)/(Ztower+RoT)) #impedansi gelombang menara
+                    psi = ((2*Ztower-Zg)/(2*Ztower+Zg))*((Ztower-RoT)/(Ztower+RoT)) #faktor damping menara
+                    tPetir = ht/300 #kecepatan cahaya 300m/mikrodet
+                    Ltower = ((ZgAksen+2*RoAksen)/ZgAksen)*((2*Zw*tPetir)/(1-psi))
+                    VPuncakTower = IpuncakM*Ztower  # tegangan yang akan timbul pada puncak menara
+                    Zek = 1/((1/Zg)+(1/Zg)+(1/Zg)+(1/Zg)+(1/Ztower)) #perhitungan tahanan paralel #besarnya tegangan pada titik percabangan
+                    Uk = VPuncakTower*(1+((Zek-Ztower)/(Zek+Ztower)))
+                    Itower = Uk/Ztower #Nilai arus yang mengalir pada menara
+                    VtfTahanan = (Itower*RoT)+(Ltower*IcuramPetir)+(Vs*m.sqrt(2)/m.sqrt(3)) #tegangan yang akan timbul pada menara 
+                    return RoT, VtfTahanan
+            
+                # 2. Membuat plot
+                x1,y1 = BasicInsulationLevel(BIL)
+                xp1,yp2 = BackFlashover()
 
-            Uk = Ztower*((BIL-(Ltower*IcuramPetir)-(Vs*m.sqrt(2)/m.sqrt(3)))/Ro)
-            VPuncakTower = Uk/(1+((Zek-Ztower)/(Zek+Ztower)))
-            a1 = round((VPuncakTower/Ztower), 3)
-            # 3. Menampilkan plot
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=xp1,y=yp2, name="Pengaruh Petir", text=xp1, mode='lines+text', textposition='bottom right'))
-            fig.add_trace(go.Scatter(x=x1, y=y1, name="Batas BIL", mode='lines', line = dict(color='firebrick')))
-            fig.update_layout(
-                title={'text':"Grafik Pengaruh Sambaran Petir Terhadap Tegangan Pada Menara",
-                'y':0.9,
-                'x':0.5,
-                'xanchor': 'center',
-                'yanchor': 'top',
-                },
-                title_font_family="Times New Roman",
-                xaxis_title="Arus Petir (kA)",
-                yaxis_title="Tegangan Pada menara (kV)",
-                font=dict(
-                    family="Times New Roman",
+                Uk = Ztower*((BIL-(Ltower*IcuramPetir)-(Vs*m.sqrt(2)/m.sqrt(3)))/Ro)
+                VPuncakTower = Uk/(1+((Zek-Ztower)/(Zek+Ztower)))
+                a1 = round((VPuncakTower/Ztower), 3)
+                # 3. Menampilkan plot
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=xp1,y=yp2, name="Pengaruh Petir", text=xp1, mode='lines+text', textposition='top left'))
+                fig.add_trace(go.Scatter(x=x1, y=y1, name="Batas BIL", mode='lines', line = dict(color='firebrick')))
+                fig.update_layout(
+                    title={'text':"Grafik Pengaruh Sambaran Petir Terhadap Tegangan Pada Menara",
+                    'y':0.9,
+                    'x':0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    },
+                    title_font_family="Times New Roman",
+                    xaxis_title="Arus Petir (kA)",
+                    yaxis_title="Tegangan Pada menara (kV)",
+                    font=dict(
+                        family="Times New Roman",
+                    )
                 )
-            )
-            st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True)
 
-        elif SimulasiSambaran == "Sambaran langsung Pada Kawat Tanah":
-            #Tegangan yang Terjadi pada Menara Akibat Sambaran pada Kawat Tanah 
-            Ikebagi2 = Ipuncak/2
-            Ug = Zg*Ikebagi2
-            print(Ug)
+                #Simulasi Induktansi
+                x1,y1 = BasicInsulationLevel(BIL)
+                Induktansi, VtfInduk = InduktansiMenara()
+                figInduktansi = go.Figure()
+                figInduktansi.add_trace(go.Scatter(x=Induktansi,y=VtfInduk, name="Pengaruh Induktansi", text=Induktansi, mode='lines+text', textposition='top left'))
+                figInduktansi.add_trace(go.Scatter(x=x1, y=y1, name="Batas BIL", mode='lines', line = dict(color='firebrick')))
+                figInduktansi.update_layout(
+                    title={'text':"Grafik Pengaruh induktansi menara Terhadap Tegangan Pada Menara",
+                    'y':0.9,
+                    'x':0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    },
+                    title_font_family="Times New Roman",
+                    xaxis_title="Induktansi Menara (µH)",
+                    yaxis_title="Tegangan Pada menara (kV)",
+                    font=dict(
+                        family="Times New Roman"
+                    )
+                )
+                st.plotly_chart(figInduktansi, use_container_width=True)
 
-            #Tegangan pada titik sambungan, K 
-            ZekTanah = 1/((1/Zg)+(1/Zg)+(1/Zg)+(1/Ztower))
-            UkTanah = Ug*(1+((ZekTanah-Zg)/(ZekTanah+Zg)))
-            print(ZekTanah, "ohm")
-            print(UkTanah, "kV")
+                #Simulasi Tahanan Kaki
+                def BasicInsulationLevelt(BOL):
+                    xt = np.arange(-20,45,0.1)
+                    yt = BOL-xt*0
+                    return xt,yt
+                xt,yt = BasicInsulationLevelt(BIL)
+                figTahanan = go.Figure()
+                RoT, VtfTahanan = TahananKaki(Ipuncak)
+                figTahanan.add_trace(go.Scatter(x=RoT,y=VtfTahanan, name="Pengaruh Tahanan Kaki", text=RoT, mode='lines+text', textposition='top left'))
+                figTahanan.update_layout(
+                    title={'text':"Grafik Pengaruh Tahanan kaki menara Terhadap Tegangan Pada Menara",
+                    'y':0.9,
+                    'x':0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    },
+                    title_font_family="Times New Roman",
+                    xaxis_title="Tahanan Pembumian Kaki Menara (Ω)",
+                    yaxis_title="Tegangan Pada menara (kV)",
+                    font=dict(
+                        family="Times New Roman"
+                    )
+                )
+                st.plotly_chart(figTahanan, use_container_width=True)
 
-            #Nilai arus yang mengalir pada tower
-            ItowerTanah = UkTanah/Ztower
-            print(ItowerTanah, "kA")
-
-            #Arus dengan kecuraman 30 kA/µs, menghasilkan tegangan akibat
-            # adanya L tower sebesar 20 µH, dengan tinggi tower 34.1 m,
-            # maka tegangan yang akan timbul pada menara
-            ZgAksen = 2*Zg*Ztower/(Zg+(2*Ztower))
-            RoAksen = Ro*Ztower/(Ztower-Ro)
-            tPetir = ht/300 #kecepatan cahaya 300m/mikrodet
-            psi = ((2*Ztower-Zg)/(2*Ztower+Zg))*((Ztower-Ro)/(Ztower+Ro))
-            Zw = ((2*Zg**2*Ztower)/((Zg+2*Ztower)**2))*((Ztower-Ro)/(Ztower+Ro))
-            Ltower = round(((ZgAksen+2*RoAksen)/ZgAksen)*((2*Zw*tPetir)/(1-psi)), 2)
-            VtfTanah = ItowerTanah*Ro+Ltower*IcuramPetir+(Vs*m.sqrt(2)/m.sqrt(3))
-            print(VtfTanah)
-            st.subheader("SIMULASI SAMBARAN LANGSUNG PADA KAWAT TANAH")
-            st.write("- Impedansi Surja Menara (Ω): ", Ztower)
-            st.write("- Impedansi Kawat tanah (Ω): ", Zg)
-            st.write("- Impedansi Kawat Fasa (Ω): ", Zc)
-            st.write("- Tegangan yang terjadi pada menara akibat sambaran pada gsw(kV):", Ug)
-            st.write("- Impedansi pada titik sambung K (Ω): ", ZekTanah)
-            st.write("- Tegangan Pada titik sambung K (Ω): ", UkTanah)
-            st.write("- Arus Yang Mengalur pada tower (kA)", ItowerTanah)            
-            st.write("- Tegangan Yang timbul pada menara (kV): ", VtfTanah)
-            if VtfTanah > BIL:
-                st.error("BACKFLASOVER!!!")
-            else:
-                st.success("Tidak Terjadi BFO")
-            #GRAFIK SIMULASI SAMBARAN
-            # 1. Membuat data
-            def BasicInsulationLevel(BOL):
-                x = np.arange(0,100,1)
-                y = BOL-x*0
-                return x,y
-
-            # 1. Membuat data
-            def BackFlashover():
-                xp = np.arange(0,100,1)
-                Ikebagi2 = xp/2
+            elif SimulasiSambaran == "Sambaran langsung Pada Kawat Tanah":
+                #Tegangan yang Terjadi pada Menara Akibat Sambaran pada Kawat Tanah 
+                Ikebagi2 = Ipuncak/2
                 Ug = Zg*Ikebagi2
+                #Tegangan pada titik sambungan, K 
                 ZekTanah = 1/((1/Zg)+(1/Zg)+(1/Zg)+(1/Ztower))
                 UkTanah = Ug*(1+((ZekTanah-Zg)/(ZekTanah+Zg)))
-                ItowerTanah = UkTanah/Ztower
-                tPetir = ht/300
-                psi = ((2*Ztower-Zg)/(2*Ztower+Zg))*((Ztower-Ro)/(Ztower+Ro))
-                Ltower = round(((ZgAksen+2*RoAksen)/ZgAksen)*((2*Zw*tPetir)/(1-psi)), 2)
-                yp = ItowerTanah*Ro+Ltower*IcuramPetir+(Vs*m.sqrt(2)/m.sqrt(3))
-                return xp,yp
-            # 2. Membuat plot
-            x1,y1 = BasicInsulationLevel(BIL)
-            xp1,yp2 = BackFlashover()
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=xp1,y=yp2, name="Pengaruh Petir", text=xp1,mode='lines+text', textposition='bottom right'))
-            fig.add_trace(go.Scatter(x=x1, y=y1, name="Batas BIL", mode='lines', line = dict(color='firebrick')))
-            fig.update_layout(
-                title={'text':"Grafik Pengaruh Sambaran Petir Terhadap Tegangan Pada Menara",
-                'y':0.9,
-                'x':0.5,
-                'xanchor': 'center',
-                'yanchor': 'top'
-                },
-                title_font_family="Times New Roman",
-                xaxis_title="Arus Petir (kA)",
-                yaxis_title="Tegangan Pada menara (kV)",
-                font=dict(
-                    family="Times New Roman",
-                )
-            )
-            st.plotly_chart(fig, use_container_width=False)
 
-if selected == "Contact":
+                #Nilai arus yang mengalir pada tower
+                ItowerTanah = UkTanah/Ztower
+
+                ZgAksen = 2*Zg*Ztower/(Zg+(2*Ztower))
+                RoAksen = Ro*Ztower/(Ztower-Ro)
+                tPetir = ht/300 #kecepatan cahaya 300m/mikrodet
+                psi = ((2*Ztower-Zg)/(2*Ztower+Zg))*((Ztower-Ro)/(Ztower+Ro))
+                Zw = ((2*Zg**2*Ztower)/((Zg+2*Ztower)**2))*((Ztower-Ro)/(Ztower+Ro))
+                Ltower = round(((ZgAksen+2*RoAksen)/ZgAksen)*((2*Zw*tPetir)/(1-psi)), 2)
+                Ltower2 = round((((Zg+2*Ro)/Zg)**2)*((2*Zw*tPetir)/(1-psi)), 2)
+                print(Ltower2, "Induksinihboss")
+                VtfTanah = ItowerTanah*Ro+Ltower*IcuramPetir+(Vs*m.sqrt(2)/m.sqrt(3))
+                
+                st.subheader("SIMULASI SAMBARAN LANGSUNG PADA KAWAT TANAH")
+                st.write("- Impedansi Surja Menara (Ω): ", Ztower)
+                st.write("- Impedansi Kawat tanah (Ω): ", Zg)
+                st.write("- Induktansi Menara (µH): ", Ltower)
+                st.write("- Tegangan yang terjadi pada menara akibat sambaran pada gsw(kV):", Ug)
+                st.write("- Impedansi pada titik sambung K (Ω): ", ZekTanah)
+                st.write("- Tegangan Pada titik sambung K (Ω): ", UkTanah)
+                st.write("- Arus Yang Mengalir pada tower (kA)", ItowerTanah)            
+                st.write("- Tegangan Yang timbul pada menara (kV): ", VtfTanah)
+                if VtfTanah > BIL:
+                    st.error("BACKFLASOVER!!!")
+                else:
+                    st.success("Tidak Terjadi BFO")
+                #GRAFIK SIMULASI SAMBARAN
+                # 1. Membuat data
+                def BasicInsulationLevel(BOL):
+                    x = np.arange(0,100,0.1)
+                    y = BOL-x*0
+                    return x,y
+
+                # 1. Membuat data
+                def BackFlashover():
+                    xp = np.arange(0,100,1)
+                    Ikebagi2 = xp/2
+                    Ug = Zg*Ikebagi2
+                    ZekTanah = 1/((1/Zg)+(1/Zg)+(1/Zg)+(1/Ztower))
+                    UkTanah = Ug*(1+((ZekTanah-Zg)/(ZekTanah+Zg)))
+                    ItowerTanah = UkTanah/Ztower
+                    tPetir = ht/300
+                    psi = ((2*Ztower-Zg)/(2*Ztower+Zg))*((Ztower-Ro)/(Ztower+Ro))
+                    Ltower = round(((ZgAksen+2*RoAksen)/ZgAksen)*((2*Zw*tPetir)/(1-psi)), 2)
+                    yp = ItowerTanah*Ro+Ltower*IcuramPetir+(Vs*m.sqrt(2)/m.sqrt(3))
+                    return xp,yp
+                
+                def InduktansiMenara():
+                    Induktansi = np.arange(0,100,1)
+                    VtfInduk = (ItowerTanah*Ro)+(Induktansi*IcuramPetir)+(Vs*m.sqrt(2)/m.sqrt(3))
+                    return Induktansi, VtfInduk
+                
+                def TahananKakiMenara():
+                    RoT = np.arange(0, 30, 5)
+                    RoAksen = RoT*Ztower/(Ztower-RoT)
+                    tPetir = ht/300 #kecepatan cahaya 300m/mikrodet
+                    psi = ((2*Ztower-Zg)/(2*Ztower+Zg))*((Ztower-RoT)/(Ztower+RoT))
+                    Zw = ((2*Zg**2*Ztower)/((Zg+2*Ztower)**2))*((Ztower-RoT)/(Ztower+RoT))
+                    Ltower = ((ZgAksen+2*RoAksen)/ZgAksen)*((2*Zw*tPetir)/(1-psi))
+                    VtfTanahTahanan = ItowerTanah*RoT+Ltower*IcuramPetir+(Vs*m.sqrt(2)/m.sqrt(3))
+                    return RoT, VtfTanahTahanan
+
+                # 2. Membuat plot
+                x1,y1 = BasicInsulationLevel(BIL)
+                xp1,yp2 = BackFlashover()
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=xp1,y=yp2, name="Pengaruh Petir", text=xp1,mode='lines+text', textposition='top left'))
+                fig.add_trace(go.Scatter(x=x1, y=y1, name="Batas BIL", mode='lines', line = dict(color='firebrick')))
+                fig.update_layout(
+                    title={'text':"Grafik Pengaruh Sambaran Petir Terhadap Tegangan Pada Menara",
+                    'y':0.9,
+                    'x':0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'top'
+                    },
+                    title_font_family="Times New Roman",
+                    xaxis_title="Arus Petir (kA)",
+                    yaxis_title="Tegangan Pada menara (kV)",
+                    font=dict(
+                        family="Times New Roman",
+                    )
+                )
+                st.plotly_chart(fig, use_container_width=True)
+                
+                x1,y1 = BasicInsulationLevel(BIL)
+                Induktansi, VtfInduk = InduktansiMenara()
+                figInduktansi = go.Figure()
+                figInduktansi.add_trace(go.Scatter(x=Induktansi,y=VtfInduk, name="Pengaruh Induktansi", text=Induktansi, mode='lines+text', textposition='top left'))
+                figInduktansi.add_trace(go.Scatter(x=x1, y=y1, name="Batas BIL", mode='lines', line = dict(color='firebrick')))
+                figInduktansi.update_layout(
+                    title={'text':"Grafik Pengaruh induktansi menara Terhadap Tegangan Pada Menara",
+                    'y':0.9,
+                    'x':0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    },
+                    title_font_family="Times New Roman",
+                    xaxis_title="Induktansi Menara (µH)",
+                    yaxis_title="Tegangan Pada menara (kV)",
+                    font=dict(
+                        family="Times New Roman"
+                    )
+                )
+                st.plotly_chart(figInduktansi, use_container_width=True)
+
+                def BasicInsulationLevelt(BOL):
+                    xt = np.arange(-20,45,0.1)
+                    yt = BOL-xt*0
+                    return xt,yt
+                xt,yt = BasicInsulationLevelt(BIL)
+                RoT, VtfTanahTahanan = TahananKakiMenara()
+                figTahanan = go.Figure()
+                figTahanan.add_trace(go.Scatter(x=RoT,y=VtfTanahTahanan, name="Pengaruh Tahanan Kaki", text=RoT, mode='lines+text', textposition='top left',))
+                figTahanan.add_trace(go.Scatter(x=xt, y=yt, name="Batas BIL", mode='lines', line = dict(color='firebrick')))
+                figTahanan.update_layout(
+                    title={'text':"Grafik Pengaruh Tahanan kaki menara Terhadap Tegangan Pada Menara",
+                    'y':0.9,
+                    'x':0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    },
+                    title_font_family="Times New Roman",
+                    xaxis_title="Tahanan Pembumian Kaki Menara (Ω)",
+                    yaxis_title="Tegangan Pada menara (kV)",
+                    font=dict(
+                        family="Times New Roman"
+                    )
+                )
+                st.plotly_chart(figTahanan, use_container_width=True)
+if selected == "Kontak":
     @st.cache_data
     def get_img_as_base64(file):
         with open(file, "rb") as f:
