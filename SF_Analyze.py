@@ -11,6 +11,7 @@ from streamlit_extras.mention import mention
 with open("design.css") as source_des:
     st.markdown(f"<style>{source_des.read()}</style>", unsafe_allow_html=True)
 
+
 @st.cache_data
 def get_img_as_base64(file):
     with open(file, "rb") as f:
@@ -193,7 +194,7 @@ if selected == "Keandalan & Optimasi Perisaian":
                         "Xs (m)" : [Xs],
                         #"Smin (m)": [Smin],
                         "Smaks (m)": [Smaks],
-                        "Imin Flashover (kA)":[Imin],
+                        #"Imin Flashover (kA)":[Imin],
                         "Imaks SF (kA)": [Imaks],
                         #"Pmin": [Pmin],
                         #"Pmax":[Pmax],
