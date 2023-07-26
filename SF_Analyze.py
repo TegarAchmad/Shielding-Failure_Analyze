@@ -221,7 +221,7 @@ if selected == "Keandalan & Optimasi Perisaian":
                 st.write("- Radius Rolling Sphere: ",C2, "meter")
                 st.write("Arus Kritis: ", ArusKritis, " kA")
                 st.write("- Radius Rolling Sphere: ", RSAK, "meter")
-                #st.write("Kemampuan Proteksi: ",F2, "%")
+                st.write("Kemampuan Proteksi: ",F2, "%")
                 st.image("zrsout22.png")
             with col2:
                 fig = px.pie(values=[F22, F2], names=['tak terproteksi', 'terproteksi'],
