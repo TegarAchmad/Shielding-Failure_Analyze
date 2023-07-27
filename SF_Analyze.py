@@ -11,6 +11,7 @@ from streamlit_extras.mention import mention
 with open("design.css") as source_des:
     st.markdown(f"<style>{source_des.read()}</style>", unsafe_allow_html=True)
 
+
 @st.cache_data
 def get_img_as_base64(file):
     with open(file, "rb") as f:
@@ -108,7 +109,8 @@ if selected == "Keandalan & Optimasi Perisaian":
     
         file_csv = st.file_uploader("Upload File Sambaran -- Contoh : [Format File](https://drive.google.com/file/d/1XqsDXSEtugAOfEqKX-YVkgLPUS5CQufd/view?usp=sharing) ", type=['csv'])
         if file_csv is not None:
-            df = pd.read_csv("TabelSambaran.csv",";")
+            df = pd.read_csv(file_csv, delimiter=';')
+      
             df['new_column'] = df['Arus Petir (kA)']*df['Jumlah Sambaran']
             total_mean = df['new_column'].sum()
             total = df['Jumlah Sambaran'].sum()
@@ -189,7 +191,7 @@ if selected == "Keandalan & Optimasi Perisaian":
                 #HASIL
                 global dataE
                 dataE = {"Sudut": [alfa],
-                        "VFlashover":[VlompatApi],
+                        #"VFlashover":[VlompatApi],
                         "Xs (m)" : [Xs],
                         #"Smin (m)": [Smin],
                         "Smaks (m)": [Smaks],
@@ -206,6 +208,7 @@ if selected == "Keandalan & Optimasi Perisaian":
                 C2 = round(Smaks, 2) #radius rolling sphere
             D2 = round(pow((C2/6.7), (1/0.8)), 2) #kemampuan min petir
             F2 = mencari_persen(D2) #kemampuan proteksi petir
+            print(F2)
             F22 = 100 - F2
             
             ArusKritis = round((pow(((C2 + 3)/6.7), (1/0.8))), 3)
@@ -229,6 +232,7 @@ if selected == "Keandalan & Optimasi Perisaian":
                 fig.update_layout(margin=dict(l=20, r=20, t=30, b=0),)
                 st.plotly_chart(fig, use_container_width=True)
                 st.image("RS22.png")
+            
             if B2 > 18:
                 st.error("PERISAIAN TIDAK ANDAL")
       
@@ -305,15 +309,9 @@ if selected == "Keandalan & Optimasi Perisaian":
                         st.write("Pertambahan Panjang GSW\t =", E5, " m")
                         #st.write("Kemampuan Proteksi\t =",F5, "%")
                         st.image("RS0.png")
-                    st.markdown("---")    
-                    st.markdown("<h3 style='text-color:#31333f;'>Rincian</h3>", unsafe_allow_html=True)
-                    def warnain(x):
-                        if x > BIL:
-                            color = 'red'
-                        else:
-                            color = 'blue'
-                        return f'background: {color}'
                     
+                    st.markdown("---")    
+                    st.markdown("<h3 style='text-color:#31333f;'>Rincian Elektrogeomteri pada Kegagalan Perisaian</h3>", unsafe_allow_html=True)
                     
                     if ELEKTROGEOMETRI(B2,D2, pgsw):
                         df1 = pd.DataFrame(dataE, index = ["Existing"])
@@ -322,8 +320,13 @@ if selected == "Keandalan & Optimasi Perisaian":
                     if ELEKTROGEOMETRI(B5,D5, pgswUJI):
                         df3 = pd.DataFrame(dataE, index =["Uji Coba"])
                     dataEL = pd.concat([df1,df2,df3])
-                    dataEL.style.applymap(warnain,subset=['VSF (kV)'])
+                    
+                
                     st.table(dataEL) 
+                    EGM1, EGM2, EGM3 = st.columns(3)
+                    with EGM1: st.image("EGM22.png")
+                    with EGM2: st.image("EGM15.png")
+                    with EGM3: st.image("EGM0.png")
             else:
                 st.markdown("<h3 style='text-color:#31333f;'>Teori Elektrogeometri</h3>", unsafe_allow_html=True)
                 AD2 = round(pow((hfasa/6.7), (1/0.8)), 2)
