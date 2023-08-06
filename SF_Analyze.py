@@ -107,7 +107,7 @@ if selected == "Keandalan & Optimasi Perisaian":
         PrentengIsolator = colb.number_input("Panjang Isolator (m)")
         IKL = colc.number_input("IKL")
     
-        file_csv = st.file_uploader("Upload File Sambaran -- Contoh : [Format File](https://drive.google.com/file/d/1XqsDXSEtugAOfEqKX-YVkgLPUS5CQufd/view?usp=sharing) ", type=['csv'])
+        file_csv = st.file_uploader("Upload File Sambaran -- Contoh : [Format File](https://drive.google.com/file/d/1Xe2KHvQV_74uSAjwmMPBaDwC4sE9b4FT/view?usp=sharing) ", type=['csv'])
         if file_csv is not None:
             df = pd.read_csv(file_csv, delimiter=';')
       
